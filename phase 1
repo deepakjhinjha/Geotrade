@@ -1,0 +1,149 @@
+# 🌍 GeoTrade AI System – Phase 1 Documentation
+
+## 📌 Overview
+
+This project builds an AI-powered geopolitical trading assistant that:
+
+* Fetches real-time geopolitical news
+* Uses a local LLM (Ollama + Llama 3)
+* Generates trading insights (Buy/Sell/Hold)
+
+---
+
+## ⚙️ Tech Stack
+
+* Python
+* Requests (API calls)
+* Ollama (Local LLM)
+* GDELT API (Geopolitical data)
+
+---
+
+## 🚀 Phase 1 Architecture
+
+```
+GDELT API → News Articles → LLM (Llama 3) → Trading Insight
+```
+
+---
+
+## 🧠 Key Features Implemented
+
+* Real-time geopolitical news fetching
+* Rate-limit handling (GDELT)
+* Local LLM inference (no API cost)
+* Basic filtering (language, noise)
+* Structured trading output
+
+---
+
+## 🧪 Final Working Code
+
+```python
+import requests
+import subprocess
+import time
+
+url = "https://api.gdeltproject.org/api/v2/doc/doc"
+
+params = {
+    "query": "(conflict OR military OR oil OR inflation OR economy)",
+    "mode": "ArtList",
+    "format": "json",
+    "maxrecords": 5
+}
+
+while True:
+    response = requests.get(url, params=params)
+
+    if response.status_code == 429:
+        print("⏳ Rate limited... waiting 5 seconds")
+        time.sleep(5)
+    else:
+        break
+
+print("STATUS CODE:", response.status_code)
+
+try:
+    data = response.json()
+except Exception as e:
+    print("JSON Error:", e)
+    exit()
+
+articles = data.get("articles", [])
+print("TOTAL ARTICLES:", len(articles))
+
+for article in articles:
+    title = article.get("title", "")
+    source = article.get("sourceCommonName", "")
+
+    if len(title) < 20:
+        continue
+
+    if not title.isascii():
+        continue
+
+    if any(word in title.lower() for word in ["sports", "movie", "celebrity"]):
+        continue
+
+    prompt = f"""
+    Analyze this geopolitical news for trading impact:
+
+    News: {title}
+
+    Return STRICTLY in this format:
+    Sentiment:
+    Action:
+    Confidence:
+    Sector:
+    Reason:
+    """
+
+    result = subprocess.run(
+        ["C:\\Users\\91950\\AppData\\Local\\Programs\\Ollama\\ollama.exe", "run", "llama3", prompt],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
+
+    print("\n🌍 SOURCE:", source)
+    print("📰 NEWS:", title)
+    print(result.stdout)
+    print("=" * 60)
+
+    time.sleep(2)
+```
+
+---
+
+## ⚠️ Challenges Faced
+
+* GDELT rate limiting (429 error)
+* Incorrect API endpoint (404 error)
+* Encoding issues (UnicodeDecodeError)
+* Ollama path not found
+
+---
+
+## ✅ Fixes Applied
+
+* Retry logic with delay
+* Correct API endpoint
+* UTF-8 decoding fix
+* Manual Ollama path configuration
+
+---
+
+## 🔥 Next Phase (Phase 2)
+
+* Convert outputs into structured signals
+* Build scoring engine
+* Map news → assets (Oil, Stocks, etc.)
+* Aggregate multiple news signals
+
+---
+
+## 🎯 Goal
+
+Build a fully automated AI-driven trading intelligence system similar to hedge fund tools.
